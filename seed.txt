@@ -1,0 +1,590 @@
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+
+const prisma = new PrismaClient();
+
+// Helper function to generate slug from name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+// Helper function to generate order number
+function generateOrderNumber(): string {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `ORD-${timestamp}-${random}`;
+}
+
+async function main() {
+  console.log("🌱 Starting seed...\n");
+
+  // Clear existing data in correct order (respect foreign keys)
+  console.log("🗑️  Clearing existing data...");
+  await prisma.review.deleteMany();
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.wishlist.deleteMany();
+  await prisma.cartItem.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.user.deleteMany();
+  console.log("✅ Existing data cleared\n");
+
+  // ============================================
+  // CREATE USERS
+  // ============================================
+  console.log("👥 Creating users...");
+  const adminPassword = await bcrypt.hash("admin123", 10);
+  const userPassword = await bcrypt.hash("user123", 10);
+
+  const admin = await prisma.user.create({
+    data: {
+      email: "admin@example.com",
+      password: adminPassword,
+      name: "Admin User",
+      role: "ADMIN",
+    },
+  });
+
+  const user1 = await prisma.user.create({
+    data: {
+      email: "user@example.com",
+      password: userPassword,
+      name: "John Doe",
+      role: "USER",
+    },
+  });
+
+  const user2 = await prisma.user.create({
+    data: {
+      email: "jane@example.com",
+      password: userPassword,
+      name: "Jane Smith",
+      role: "USER",
+    },
+  });
+
+  console.log("✅ Created 3 users (1 admin, 2 regular users)\n");
+
+  // ============================================
+  // CREATE CATEGORIES
+  // ============================================
+  console.log("📁 Creating categories...");
+  const categories = await Promise.all([
+    prisma.category.create({
+      data: {
+        name: "Electronics",
+        slug: "electronics",
+        description: "Electronic devices and accessories",
+        imageUrl:
+          "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=500",
+        sortOrder: 1,
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Audio",
+        slug: "audio",
+        description: "Headphones, speakers, and audio equipment",
+        imageUrl:
+          "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
+        sortOrder: 2,
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Computers",
+        slug: "computers",
+        description: "Laptops, desktops, and computer accessories",
+        imageUrl:
+          "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500",
+        sortOrder: 3,
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Accessories",
+        slug: "accessories",
+        description: "Phone cases, cables, and other accessories",
+        imageUrl:
+          "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=500",
+        sortOrder: 4,
+      },
+    }),
+  ]);
+
+  console.log("✅ Created 4 categories\n");
+
+  // ============================================
+  // CREATE PRODUCTS
+  // ============================================
+  console.log("📦 Creating products...");
+  const productsData = [
+    {
+      name: "Wireless Headphones Pro",
+      description:
+        "Premium Bluetooth 5.0 headphones with active noise cancellation, 30-hour battery life, and exceptional sound quality. Perfect for music lovers and professionals.",
+      price: 99.99,
+      comparePrice: 129.99,
+      costPrice: 45.0,
+      stock: 50,
+      sku: "WHP-001",
+      imageUrl:
+        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
+      images: [
+        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
+        "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=500",
+      ],
+      categoryId: categories[1].id, // Audio
+      isFeatured: true,
+      metaTitle: "Wireless Headphones Pro - Premium Audio Experience",
+      metaDescription:
+        "Experience superior sound quality with our premium wireless headphones",
+    },
+    {
+      name: "Smart Watch Ultra",
+      description:
+        "Advanced smartwatch with fitness tracking, heart rate monitoring, GPS, and 7-day battery life. Compatible with iOS and Android.",
+      price: 199.99,
+      comparePrice: 249.99,
+      costPrice: 95.0,
+      stock: 30,
+      sku: "SWU-002",
+      imageUrl:
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
+      images: [
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
+        "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=500",
+      ],
+      categoryId: categories[0].id, // Electronics
+      isFeatured: true,
+      metaTitle: "Smart Watch Ultra - Advanced Fitness Tracking",
+      metaDescription: "Track your fitness goals with our advanced smartwatch",
+    },
+    {
+      name: "Ergonomic Laptop Stand",
+      description:
+        "Premium aluminum laptop stand with adjustable height and angle. Improves posture and reduces neck strain. Compatible with all laptop sizes.",
+      price: 49.99,
+      costPrice: 18.0,
+      stock: 100,
+      sku: "ELS-003",
+      imageUrl:
+        "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500",
+      images: [
+        "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500",
+      ],
+      categoryId: categories[2].id, // Computers
+      isFeatured: false,
+    },
+    {
+      name: "USB-C Hub 7-in-1",
+      description:
+        "Multi-port USB-C hub with HDMI 4K output, 3x USB 3.0, SD/TF card readers, and 100W power delivery. Essential for modern laptops.",
+      price: 39.99,
+      comparePrice: 54.99,
+      costPrice: 15.0,
+      stock: 75,
+      sku: "UCH-004",
+      imageUrl:
+        "https://images.unsplash.com/photo-1625948515291-69613efd103f?w=500",
+      images: [
+        "https://images.unsplash.com/photo-1625948515291-69613efd103f?w=500",
+      ],
+      categoryId: categories[2].id, // Computers
+      isFeatured: false,
+    },
+    {
+      name: "Mechanical Gaming Keyboard RGB",
+      description:
+        "Professional mechanical keyboard with Cherry MX Blue switches, per-key RGB lighting, and programmable macros. Built for gamers and typists.",
+      price: 129.99,
+      comparePrice: 159.99,
+      costPrice: 60.0,
+      stock: 40,
+      sku: "MGK-005",
+      imageUrl:
+        "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500",
+      images: [
+        "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500",
+        "https://images.unsplash.com/photo-1595225476474-87563907a212?w=500",
+      ],
+      categoryId: categories[2].id, // Computers
+      isFeatured: true,
+    },
+    {
+      name: "Wireless Ergonomic Mouse",
+      description:
+        "Vertical ergonomic mouse with precision tracking, 6 programmable buttons, and rechargeable battery. Reduces wrist strain.",
+      price: 29.99,
+      costPrice: 12.0,
+      stock: 120,
+      sku: "WEM-006",
+      imageUrl:
+        "https://images.unsplash.com/photo-1527814050087-3793815479db?w=500",
+      images: [
+        "https://images.unsplash.com/photo-1527814050087-3793815479db?w=500",
+      ],
+      categoryId: categories[2].id, // Computers
+      isFeatured: false,
+    },
+    {
+      name: "1080p HD Webcam",
+      description:
+        "1080p Full HD webcam with built-in dual microphones, auto-focus, and low-light correction. Perfect for video calls and streaming.",
+      price: 69.99,
+      costPrice: 28.0,
+      stock: 60,
+      sku: "HDW-007",
+      imageUrl:
+        "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=500",
+      images: [
+        "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=500",
+      ],
+      categoryId: categories[0].id, // Electronics
+      isFeatured: false,
+    },
+    {
+      name: "Premium Phone Case",
+      description:
+        "Military-grade protective phone case with shock absorption, raised edges, and wireless charging compatible. Available in multiple colors.",
+      price: 19.99,
+      comparePrice: 29.99,
+      costPrice: 5.0,
+      stock: 200,
+      sku: "PPC-008",
+      imageUrl:
+        "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=500",
+      images: [
+        "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=500",
+        "https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=500",
+      ],
+      categoryId: categories[3].id, // Accessories
+      isFeatured: false,
+    },
+    {
+      name: "Portable Bluetooth Speaker",
+      description:
+        "360° sound, waterproof IPX7, 12-hour battery life. Perfect for outdoor adventures and home entertainment.",
+      price: 79.99,
+      costPrice: 35.0,
+      stock: 85,
+      sku: "PBS-009",
+      imageUrl:
+        "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500",
+      images: [
+        "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500",
+      ],
+      categoryId: categories[1].id, // Audio
+      isFeatured: true,
+    },
+    {
+      name: "USB-C Fast Charger 65W",
+      description:
+        "GaN technology fast charger with foldable plug, 65W power delivery, compatible with laptops, tablets, and phones.",
+      price: 34.99,
+      costPrice: 14.0,
+      stock: 150,
+      sku: "UFC-010",
+      imageUrl:
+        "https://images.unsplash.com/photo-1591290619762-c588f0e8e463?w=500",
+      images: [
+        "https://images.unsplash.com/photo-1591290619762-c588f0e8e463?w=500",
+      ],
+      categoryId: categories[3].id, // Accessories
+      isFeatured: false,
+    },
+  ];
+
+  const products: any[] = [];
+  for (const productData of productsData) {
+    const product = await prisma.product.create({
+      data: {
+        ...productData,
+        slug: generateSlug(productData.name),
+      },
+    });
+    products.push(product);
+  }
+
+  console.log("✅ Created 10 products\n");
+
+  // ============================================
+  // CREATE CART ITEMS
+  // ============================================
+  console.log("🛒 Creating cart items...");
+  await prisma.cartItem.createMany({
+    data: [
+      { userId: user1.id, productId: (products[0] as any).id, quantity: 1 },
+      { userId: user1.id, productId: (products[4] as any).id, quantity: 2 },
+      { userId: user2.id, productId: (products[1] as any).id, quantity: 1 },
+    ],
+  });
+  console.log("✅ Created 3 cart items\n");
+
+  // ============================================
+  // CREATE WISHLIST ITEMS
+  // ============================================
+  console.log("❤️  Creating wishlist items...");
+  await prisma.wishlist.createMany({
+    data: [
+      { userId: user1.id, productId: (products[1] as any).id },
+      { userId: user1.id, productId: (products[8] as any).id },
+      { userId: user2.id, productId: (products[0] as any).id },
+      { userId: user2.id, productId: (products[4] as any).id },
+    ],
+  });
+  console.log("✅ Created 4 wishlist items\n");
+
+  // ============================================
+  // CREATE ORDERS
+  // ============================================
+  console.log("📋 Creating orders...");
+
+  // Order 1 - Delivered
+  const order1Items = [
+    { product: products[0], quantity: 1 },
+    { product: products[5], quantity: 2 },
+  ];
+  const order1Subtotal = order1Items.reduce(
+    (sum, item) => sum + (item.product && "price" in item.product ? Number((item.product as any).price) * item.quantity : 0),
+    0
+  );
+  const order1Tax = order1Subtotal * 0.075; // 7.5% tax
+  const order1Shipping = 10.0;
+  const order1Total = order1Subtotal + order1Tax + order1Shipping;
+
+  const order1 = await prisma.order.create({
+    data: {
+      orderNumber: generateOrderNumber(),
+      userId: user1.id,
+      status: "DELIVERED",
+      paymentStatus: "PAID",
+      paymentMethod: "credit_card",
+      subtotal: order1Subtotal,
+      tax: order1Tax,
+      shippingCost: order1Shipping,
+      total: order1Total,
+      shippingName: "John Doe",
+      shippingEmail: "user@example.com",
+      shippingPhone: "+234 801 234 5678",
+      shippingAddress: "123 Main Street, Apt 4B",
+      shippingCity: "Lagos",
+      shippingState: "Lagos",
+      shippingZip: "100001",
+      shippingCountry: "NG",
+      trackingNumber: "TRK123456789NG",
+      paidAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      shippedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+      deliveredAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      items: {
+        create: order1Items.map((item) => {
+          const product = item.product as {
+            id: number | string;
+            price: number | string;
+            name: string;
+            description?: string;
+            imageUrl?: string;
+            sku?: string;
+          };
+          return {
+            productId: product.id,
+            quantity: item.quantity,
+            price: Number(product.price),
+            subtotal: Number(product.price) * item.quantity,
+            productName: product.name,
+          };
+        }),
+      },
+    },
+  });
+
+  // Order 2 - Shipped
+  const order2Items = [{ product: products[1] as {
+    id: number | string;
+    price: number | string;
+    name: string;
+    description?: string;
+    imageUrl?: string;
+    sku?: string;
+  }, quantity: 1 }];
+  const order2Subtotal = Number(order2Items[0].product.price);
+  const order2Tax = order2Subtotal * 0.075;
+  const order2Shipping = 10.0;
+  const order2Total = order2Subtotal + order2Tax + order2Shipping;
+
+  const order2 = await prisma.order.create({
+    data: {
+      orderNumber: generateOrderNumber(),
+      userId: user2.id,
+      status: "SHIPPED",
+      paymentStatus: "PAID",
+      paymentMethod: "paypal",
+      subtotal: order2Subtotal,
+      tax: order2Tax,
+      shippingCost: order2Shipping,
+      total: order2Total,
+      shippingName: "Jane Smith",
+      shippingEmail: "jane@example.com",
+      shippingPhone: "+234 802 345 6789",
+      shippingAddress: "456 Ocean Drive",
+      shippingCity: "Lagos",
+      shippingState: "Lagos",
+      shippingZip: "100002",
+      shippingCountry: "NG",
+      trackingNumber: "TRK987654321NG",
+      paidAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      shippedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+      items: {
+        create: order2Items.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price,
+          subtotal: Number(item.product.price) * item.quantity,
+          productName: item.product.name,
+          productDescription: item.product.description,
+          productImageUrl: item.product.imageUrl,
+          productSku: item.product.sku,
+        })),
+      },
+    },
+  });
+
+  // Order 3 - Processing
+  const order3Items = [
+    { product: products[4], quantity: 1 },
+    { product: products[5], quantity: 1 },
+    { product: products[7], quantity: 3 },
+  ];
+  const order3Subtotal = order3Items.reduce(
+    (sum, item) => sum + Number((item.product as any).price) * item.quantity,
+    0
+  );
+  const order3Tax = order3Subtotal * 0.075;
+  const order3Shipping = 10.0;
+  const order3Discount = 15.0; // Coupon discount
+  const order3Total =
+    order3Subtotal + order3Tax + order3Shipping - order3Discount;
+
+  const order3 = await prisma.order.create({
+    data: {
+      orderNumber: generateOrderNumber(),
+      userId: user1.id,
+      status: "PROCESSING",
+      paymentStatus: "PAID",
+      paymentMethod: "credit_card",
+      subtotal: order3Subtotal,
+      tax: order3Tax,
+      shippingCost: order3Shipping,
+      discount: order3Discount,
+      total: order3Total,
+      shippingName: "John Doe",
+      shippingEmail: "user@example.com",
+      shippingPhone: "+234 801 234 5678",
+      shippingAddress: "123 Main Street, Apt 4B",
+      shippingCity: "Lagos",
+      shippingState: "Lagos",
+      shippingZip: "100001",
+      shippingCountry: "NG",
+      paidAt: new Date(),
+      customerNotes: "Please leave package at front door",
+      items: {
+        create: order3Items.map((item) => ({
+          productId: (item.product as any).id,
+          quantity: item.quantity,
+          price: Number((item.product as any).price),
+          subtotal: Number((item.product as any).price) * item.quantity,
+          productName: (item.product as any).name,
+          productDescription: (item.product as any).description,
+          productImageUrl: (item.product as any).imageUrl,
+          productSku: (item.product as any).sku,
+        })),
+      },
+    },
+  });
+
+  console.log("✅ Created 3 orders\n");
+
+  // ============================================
+  // CREATE REVIEWS
+  // ============================================
+  console.log("⭐ Creating product reviews...");
+  await prisma.review.createMany({
+    data: [
+      {
+        userId: user1.id,
+        productId: (products[0] as any).id,
+        rating: 5,
+        title: "Amazing sound quality!",
+        comment:
+          "These headphones exceeded my expectations. The noise cancellation is perfect and the battery lasts forever.",
+        isVerified: true,
+        isApproved: true,
+      },
+      {
+        userId: user2.id,
+        productId: (products[0] as any).id,
+        rating: 4,
+        title: "Great but a bit pricey",
+        comment:
+          "Really good headphones, very comfortable for long use. Would give 5 stars if they were a bit cheaper.",
+        isVerified: true,
+        isApproved: true,
+      },
+      {
+        userId: user1.id,
+        productId: (products[4] as any).id,
+        rating: 5,
+        title: "Best keyboard ever!",
+        comment:
+          "As a programmer, I type all day. This keyboard is a game-changer. The switches feel amazing.",
+        isVerified: true,
+        isApproved: true,
+      },
+      {
+        userId: user2.id,
+        productId: (products[1] as any).id,
+        rating: 5,
+        title: "Perfect for fitness tracking",
+        comment:
+          "Tracks everything I need, battery life is excellent, and it looks great!",
+        isVerified: true,
+        isApproved: true,
+      },
+    ],
+  });
+  console.log("✅ Created 4 product reviews\n");
+
+  // ============================================
+  // SUMMARY
+  // ============================================
+  console.log("═══════════════════════════════════════");
+  console.log("✨ SEED COMPLETED SUCCESSFULLY! ✨");
+  console.log("═══════════════════════════════════════\n");
+
+  console.log("📊 Database Summary:");
+  console.log("───────────────────────────────────────");
+  console.log(`👥 Users: 3 (1 admin, 2 regular)`);
+  console.log(`   Admin: admin@example.com / admin123`);
+  console.log(`   User1: user@example.com / user123`);
+  console.log(`   User2: jane@example.com / user123\n`);
+  console.log(`📁 Categories: 4`);
+  console.log(`📦 Products: 10 (4 featured)`);
+  console.log(`🛒 Cart Items: 3`);
+  console.log(`❤️  Wishlist Items: 4`);
+  console.log(`📋 Orders: 3 (1 delivered, 1 shipped, 1 processing)`);
+  console.log(`⭐ Reviews: 4\n`);
+  console.log("═══════════════════════════════════════\n");
+}
+
+main()
+  .catch((e) => {
+    console.error("❌ Seed failed:", e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

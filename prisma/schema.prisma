@@ -1,0 +1,287 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+// ============================================
+// USER MODEL
+// ============================================
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  cartItems CartItem[]
+  orders    Order[]
+  wishlist  Wishlist[]
+  reviews   Review[]
+
+  @@index([email])
+  @@map("users")
+}
+
+// ============================================
+// PRODUCT MODEL
+// ============================================
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String   @db.Text
+  price       Decimal  @db.Decimal(10, 2)
+  comparePrice Decimal? @db.Decimal(10, 2) // For showing discounts
+  costPrice   Decimal? @db.Decimal(10, 2) // For profit calculations
+  stock       Int      @default(0)
+  sku         String?  @unique
+  imageUrl    String
+  images      String[] @default([]) // Additional images
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Tracking
+  viewCount Int @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  category    Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId  String?
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  wishlists   Wishlist[]
+  reviews     Review[]
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@map("products")
+}
+
+// ============================================
+// CATEGORY MODEL
+// ============================================
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@index([slug])
+  @@map("categories")
+}
+
+// ============================================
+// CART MODEL
+// ============================================
+model CartItem {
+  id        String   @id @default(cuid())
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@map("cart_items")
+}
+
+// ============================================
+// ORDER MODEL
+// ============================================
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  status          OrderStatus @default(PENDING)
+  
+  // Pricing
+  subtotal        Decimal     @db.Decimal(10, 2)
+  tax             Decimal     @default(0) @db.Decimal(10, 2)
+  shippingCost    Decimal     @default(0) @db.Decimal(10, 2)
+  discount        Decimal     @default(0) @db.Decimal(10, 2)
+  total           Decimal     @db.Decimal(10, 2)
+  
+  // Shipping Information
+  shippingName    String
+  shippingEmail   String
+  shippingPhone   String?
+  shippingAddress String
+  shippingCity    String
+  shippingState   String?
+  shippingZip     String
+  shippingCountry String      @default("NG")
+  
+  // Billing Information (optional, can be same as shipping)
+  billingAddress  String?
+  billingCity     String?
+  billingState    String?
+  billingZip      String?
+  billingCountry  String?
+  
+  // Payment
+  paymentMethod   String?
+  paymentStatus   PaymentStatus @default(PENDING)
+  paidAt          DateTime?
+  
+  // Tracking
+  trackingNumber  String?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  
+  // Notes
+  customerNotes   String?       @db.Text
+  adminNotes      String?       @db.Text
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  items     OrderItem[]
+
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// ============================================
+// ORDER ITEM MODEL
+// ============================================
+model OrderItem {
+  id        String  @id @default(cuid())
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2) // Price at time of purchase
+  subtotal  Decimal @db.Decimal(10, 2) // quantity * price
+  
+  // Product snapshot (in case product is deleted/changed)
+  productName        String
+  productDescription String?
+  productImageUrl    String?
+  productSku         String?
+  
+  createdAt DateTime @default(now())
+
+  // Relations
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId String
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// ============================================
+// WISHLIST MODEL
+// ============================================
+model Wishlist {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
+  @@map("wishlists")
+}
+
+// ============================================
+// REVIEW MODEL (Bonus feature)
+// ============================================
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5 stars
+  title     String?
+  comment   String?  @db.Text
+  isVerified Boolean @default(false) // Verified purchase
+  isApproved Boolean @default(false) // Admin approval
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+
+  @@unique([userId, productId]) // One review per user per product
+  @@index([productId])
+  @@index([rating])
+  @@map("reviews")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING       // Order placed, awaiting payment
+  PAID          // Payment confirmed
+  PROCESSING    // Order being prepared
+  SHIPPED       // Order shipped
+  DELIVERED     // Order delivered
+  CANCELLED     // Order cancelled
+  REFUNDED      // Order refunded
+}
+
+enum PaymentStatus {
+  PENDING       // Awaiting payment
+  PAID          // Payment received
+  FAILED        // Payment failed
+  REFUNDED      // Payment refunded
+}
+
+
