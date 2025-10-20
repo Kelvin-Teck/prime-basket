@@ -1,0 +1,184 @@
+paths:
+  /api/wishlist:
+    get:
+      tags:
+        - Wishlist
+      summary: Get user's wishlist
+      description: Retrieve all items in the authenticated user's wishlist
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Wishlist retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+                    product:
+                      $ref: '#/components/schemas/Product'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/wishlist/{productId}:
+    post:
+      tags:
+        - Wishlist
+      summary: Add product to wishlist
+      description: Add a product to the user's wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+          description: Product ID to add to wishlist
+          example: clx1234567890
+      responses:
+        '201':
+          description: Product added to wishlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Product added to wishlist
+                  wishlistItem:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      product:
+                        $ref: '#/components/schemas/Product'
+        '400':
+          description: Product already in wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Product already in wishlist
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Wishlist
+      summary: Remove product from wishlist
+      description: Remove a product from the user's wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+          description: Product ID to remove from wishlist
+          example: clx1234567890
+      responses:
+        '200':
+          description: Product removed from wishlist
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Product removed from wishlist
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Product not in wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/wishlist/check/{productId}:
+    get:
+      tags:
+        - Wishlist
+      summary: Check if product is in wishlist
+      description: Check whether a specific product is in the user's wishlist
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+          description: Product ID to check
+          example: clx1234567890
+      responses:
+        '200':
+          description: Check completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inWishlist:
+                    type: boolean
+                    example: true
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

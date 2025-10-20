@@ -2,22 +2,21 @@ import Joi from "joi";
 
 // Product Schema
 export const productSchema = Joi.object({
-  name: Joi.string().min(1).required().messages({
-    "any.required": "Product name is required",
-  }),
-  description: Joi.string().min(1).required().messages({
-    "any.required": "Description is required",
-  }),
-  price: Joi.number().positive().required().messages({
-    "number.positive": "Price must be positive",
-  }),
-  stock: Joi.number().integer().min(0).required().messages({
-    "number.base": "Stock must be a number",
-    "number.min": "Stock must be non-negative",
-  }),
-  imageUrl: Joi.string().uri().required().messages({
-    "string.uri": "Invalid image URL",
-  }),
+  name: Joi.string().required(),
+  slug: Joi.string().optional(), // Auto-generate on backend if not provided
+  description: Joi.string().required(),
+  price: Joi.number().positive().required(),
+  comparePrice: Joi.number().positive().optional(),
+  costPrice: Joi.number().positive().optional(),
+  stock: Joi.number().integer().min(0).optional(),
+  sku: Joi.string().optional(),
+  imageUrl: Joi.string().uri().required(),
+  images: Joi.array().items(Joi.string().uri()).optional(),
+  isActive: Joi.boolean().optional(),
+  isFeatured: Joi.boolean().optional(),
+  metaTitle: Joi.string().optional(),
+  metaDescription: Joi.string().optional(),
+  categoryId: Joi.string().optional()
 });
 
 // Update Product Schema

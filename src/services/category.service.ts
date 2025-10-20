@@ -2,6 +2,7 @@ import { AuthRequest } from "../types";
 import * as categoryRepo from "../repos/category.repo";
 import NotFoundError from "../errors/not-found.error";
 import * as helpers from "../utils/helpers";
+import AlreadyExists from "../errors/already-exist.error";
 
 export const getAllCategories = async (req: AuthRequest) => {
   const categories = await categoryRepo.getAllCategories();
@@ -26,6 +27,12 @@ export const createCategory = async (req: AuthRequest) => {
 
   // Generate slug
   const slug = helpers.generateSlug(name);
+  // Check if category with this slug already exists
+  const existingCategory = await categoryRepo.getSingleCategoryBySlug(slug);
+  
+  if (existingCategory) {
+    throw new AlreadyExists("A category with this name already exists");
+  }
 
   const data = {
     name,

@@ -1,16 +1,18 @@
 {
   "name": "prime-basket",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon src/index.ts",
-    "build": "tsc",
+    "build": "npx prisma generate && tsc",
+    "postbuild": "echo 'Build complete ✅'",
     "start": "node dist/index.js",
+    "deploy": "npm install --omit=dev && npm run build && npx prisma migrate deploy && npm run start",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
+    "prisma:migrate:deploy": "npx prisma migrate deploy",
     "prisma:studio": "npx prisma studio",
-    "prisma:seed": "ts-node prisma/seed.ts",
-    "prisma:seed-faker": "ts-node prisma/seed-faker.ts"
+    "prisma:seed": "ts-node prisma/seed.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -22,7 +24,10 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "joi": "^18.0.1",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "merge-yaml": "^1.1.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.1.0",
@@ -30,6 +35,8 @@
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.8.0",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "nodemon": "^3.1.10",
     "prisma": "^6.17.1",
     "ts-node": "^10.9.2",
