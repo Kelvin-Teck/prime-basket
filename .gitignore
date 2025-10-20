@@ -1,7 +1,10 @@
-node_modules
+# Node modules and logs
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+logs/
+*.log
 
 # Keep environment variables out of version control
 .env
@@ -17,7 +20,7 @@ build/
 # TypeScript
 *.tsbuildinfo
 
-# IDE
+# IDE / Editors
 .vscode/
 .idea/
 *.swp
@@ -29,12 +32,19 @@ build/
 Thumbs.db
 
 # Prisma
+# Ignore migration artifact folders but keep the .keep file if you use it
 prisma/migrations/*_migration/
 !prisma/migrations/.keep
 
-# Logs
-logs/
-*.log
+# Do NOT ignore the whole prisma folder — it must be committed
+# because it includes schema.prisma and seeds
+# So keep this line commented:
+# prisma/
+
+# Generated Prisma client (automatically created inside node_modules)
+# You do NOT need to include /src/generated/prisma in your repo.
+# Remove this line if your setup no longer generates a local client copy
+/src/generated/prisma
 
 # Testing
 coverage/
@@ -43,5 +53,3 @@ coverage/
 # Misc
 .cache/
 temp/
-
-/src/generated/prisma

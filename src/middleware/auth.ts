@@ -27,6 +27,7 @@ export const isAdmin = (
   res: Response,
   next: NextFunction
 ) => {
+  console.log(req.user?.role)
   if (req.user?.role !== "ADMIN") {
     return res.status(403).json({ error: "Admin access required" });
   }

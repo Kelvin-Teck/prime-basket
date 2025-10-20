@@ -1,8 +1,21 @@
 import express, { Express, NextFunction, Request, Response } from "express";
+
 import dotenv from "dotenv";
 import cors from "cors";
+
+import swaggerJsdoc from "swagger-jsdoc";
+import swaggerUI from "swagger-ui-express";
+import swaggerOptions from "./config/swagger.config";
+
+
 import authRouter from "./routes/auth.route"
 import productRouter from "./routes/product.route"
+import cartRouter from "./routes/cart.route";
+import categoryRouter from "./routes/category.route"
+import orderRouter from "./routes/order.route"
+import wishlistRouter from "./routes/wishlist.route"
+import reviewRouter from "./routes/review.route"
+
 import { exceptionHandler } from "./middleware/exeption";
 
 dotenv.config();
@@ -15,12 +28,15 @@ export const PORT = process.env.PORT || 3000;
 // MIDDLEWARE
 // ============================================
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [process.env.FRONTEND_URL || 'http://localhost:3000',
+    'http://localhost:5173'
+  ],
   credentials: true,
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -28,7 +44,11 @@ app.use((req, res, next) => {
   next();
 });
 
-
+// ============================================
+// SWAGGER DOCUMENTATION
+// ============================================
+const specs = swaggerJsdoc(swaggerOptions);
+app.use("/docs", swaggerUI.serve, swaggerUI.setup(specs));
 // ============================================
 // ROUTES
 // ============================================
@@ -46,11 +66,11 @@ app.get('/health', (req: Request, res: Response) => {
 // API routes
 app.use('/api/auth', authRouter);
 app.use('/api/products', productRouter);
-// app.use('/api/categories', categoryRoutes);
-// app.use('/api/cart', cartRoutes);
-// app.use('/api/orders', orderRoutes);
-// app.use('/api/wishlist', wishlistRoutes);
-// app.use('/api/reviews', reviewRoutes);
+app.use('/api/categories', categoryRouter);
+app.use('/api/cart', cartRouter);
+app.use('/api/orders', orderRouter);
+app.use('/api/wishlist', wishlistRouter);
+app.use('/api/reviews', reviewRouter);
 
 // ============================================
 // ERROR HANDLING
