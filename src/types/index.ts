@@ -29,9 +29,17 @@ export interface CreateProductBody {
   name: string;
   description: string;
   price: number;
+  comparePrice?: number;
+  costPrice?: number;
   stock: number;
-  imageUrl: string;
-  slug: string;
+  sku?: string;
+  categoryId?: string;
+  isFeatured?: boolean;
+  metaTitle?: string;
+  metaDescription?: string;
+  // Image handling
+  imageUrl?: string; // For URL-based main image
+  additionalImageUrls?: string[]; // For URL-based additional images
 }
 
 export interface UpdateProductBody {
@@ -40,6 +48,7 @@ export interface UpdateProductBody {
   price?: number;
   stock?: number;
   imageUrl?: string;
+  
 }
 
 export interface AddToCartBody {

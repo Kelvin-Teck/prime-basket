@@ -9,8 +9,8 @@ export const getAllCartItems = async (req: AuthRequest) => {
 
   const cartItems = await cartRepo.getAllCartItems(userId);
 
-  if (cartItems.length == 0) {
-    throw new NotFoundError("No Item in cart");
+  if (!cartItems) {
+    throw new NotFoundError("Cart does not exist");
   }
 
   return cartItems;
@@ -35,7 +35,7 @@ export const addToCart = async (req: AuthRequest) => {
   // Check if item already in cart
   const existingItem = await cartRepo.getCartItem(userId, productId);
 
-  let cartItem;
+  let cartItem : any;
   if (existingItem) {
     // Update quantity
     const newQuantity = existingItem.quantity + quantity;

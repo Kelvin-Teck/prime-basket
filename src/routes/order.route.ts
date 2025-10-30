@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth";
-import * as orderController from "../controllers/order.controller"
+import * as orderController from "../controllers/order.controller";
 import { validate } from "../middleware/validation";
+import { asyncHandler } from "../middleware/async-handler";
 
 const router = Router();
 
@@ -9,12 +10,12 @@ const router = Router();
 router.use(authenticate);
 
 // Get user's orders
-router.get("/", orderController.getAllUserOrders);
+router.get("/", asyncHandler(orderController.getAllUserOrders));
 
 // Get single order
-router.get("/:id", orderController.getSingleUserOrder);
+router.get("/:id", asyncHandler(orderController.getSingleUserOrder));
 
 // // Place order from cart
-router.post("/checkout", [], orderController.placeOrder);
+router.post("/checkout", [], asyncHandler(orderController.placeOrder));
 
 export default router;

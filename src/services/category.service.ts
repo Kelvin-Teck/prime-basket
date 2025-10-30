@@ -51,7 +51,7 @@ export const updateCategory = async (req: AuthRequest) => {
   const { id } = req.params;
   const { name, description, imageUrl, sortOrder, isActive } = req.body;
   // Generate new slug if name changed
-  let slug;
+  let slug: string;
 
   if (name) {
     slug = helpers.generateSlug(name);

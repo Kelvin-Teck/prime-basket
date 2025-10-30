@@ -7,8 +7,6 @@ export const exceptionHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.error("🔥 Exception caught:", err);
-
   if (err instanceof APIException) {
     return res.status(err.statusCode).json({
       success: false,

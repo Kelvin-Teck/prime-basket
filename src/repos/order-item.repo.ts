@@ -11,3 +11,12 @@ export const findSingleDeliveredOrderItem = async (userId: string, productId: st
           },
         });
 }
+
+export const findOrderByProductId = async (id: string ) => {
+  const order = await prisma.orderItem.findFirst({
+    where: { productId: id },
+  });
+
+  return order
+
+}
