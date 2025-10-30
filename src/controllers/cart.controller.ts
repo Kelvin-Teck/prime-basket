@@ -2,6 +2,7 @@ import { AuthRequest } from "../types";
 import { Response } from "express";
 import * as helpers from "./base.controller";
 import * as cartService from "../services/cart.service";
+import APIException from "../errors";
 
 export const getAllCartItems = async (req: AuthRequest, res: Response) => {
   try {
@@ -13,15 +14,16 @@ export const getAllCartItems = async (req: AuthRequest, res: Response) => {
       "Cart Items successfully retrieved",
       response
     );
-  } catch (error: any) {
-    console.error("Get products error:", error);
-
-    helpers.errResponse(
-      res,
-      error.code,
-      "Failed to retrieved cart items",
-      error.message
-    );
+  } catch (error: unknown) {
+    if (error instanceof APIException) {
+      helpers.errResponse(
+        res,
+        error.statusCode,
+        "Failed to retrieved cart items",
+        error.message
+      );
+    }
+    helpers.errResponse(res, 500, "Internal Server Error");
   }
 };
 
@@ -35,15 +37,16 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       "Item added to cart successfully",
       response
     );
-  } catch (error: any) {
-    console.error("Get products error:", error);
-
-    helpers.errResponse(
-      res,
-      error.code,
-      "Failed to add item to cart",
-      error.message
-    );
+  } catch (error: unknown) {
+    if (error instanceof APIException) {
+      helpers.errResponse(
+        res,
+        error.statusCode,
+        "Failed to add item to cart",
+        error.message
+      );
+    }
+    helpers.errResponse(res, 500, "Internal Server Error");
   }
 };
 
@@ -57,21 +60,22 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
       "Cart Item updated successfully",
       response
     );
-  } catch (error: any) {
-    console.error("Get products error:", error);
+  } catch (error: unknown) {
+    if (error instanceof APIException) {
+      helpers.errResponse(
+        res,
+        error.statusCode,
+        "Failed to update item in cart",
+        error.message
+      );
+    }
 
-    helpers.errResponse(
-      res,
-      error.code,
-      "Failed to update item in cart",
-      error.message
-    );
+    helpers.errResponse(res, 500, "Internal Server Error");
   }
 };
 
-
-export const removeCartItem = async (req: AuthRequest, res: Response) =>{
-      try {
+export const removeCartItem = async (req: AuthRequest, res: Response) => {
+  try {
     const response = await cartService.removeCartItem(req);
 
     helpers.successResponse(
@@ -80,14 +84,16 @@ export const removeCartItem = async (req: AuthRequest, res: Response) =>{
       "Cart Item deleted successfully",
       response
     );
-  } catch (error: any) {
-    console.error("Get products error:", error);
+  } catch (error: unknown) {
+    if (error instanceof APIException) {
+      helpers.errResponse(
+        res,
+        error.statusCode,
+        "Failed to delete item from cart",
+        error.message
+      );
+    }
 
-    helpers.errResponse(
-      res,
-      error.code,
-      "Failed to delete item from cart",
-      error.message
-    );
+    helpers.errResponse(res, 500, "Internal Server Error");
   }
-}
+};

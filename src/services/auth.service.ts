@@ -39,6 +39,7 @@ export const login = async (req: AuthRequest) => {
 
      const { email, password } = req.body as LoginBody;
 
+
      // Find user
     const user = await userRepo.findUserByEmail(email);
     

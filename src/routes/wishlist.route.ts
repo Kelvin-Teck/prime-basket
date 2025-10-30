@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth";
-import * as wishListController from "../controllers/wishlist.controller"
+import * as wishListController from "../controllers/wishlist.controller";
+import { asyncHandler } from "../middleware/async-handler";
 
 const router = Router();
 
@@ -8,15 +9,21 @@ const router = Router();
 router.use(authenticate);
 
 // Get user's wishlist
-router.get("/", wishListController.getUserWishList);
+router.get("/", asyncHandler(wishListController.getUserWishList));
 
 // Add product to wishlist
-router.post("/:productId", wishListController.addToWishList);
+router.post("/:productId", asyncHandler(wishListController.addToWishList));
 
 // Remove product from wishlist
-router.delete("/:productId", wishListController.removeItemFromWishList);
+router.delete(
+  "/:productId",
+  asyncHandler(wishListController.removeItemFromWishList)
+);
 
 // Check if product is in wishlist
-router.get("/check/:productId", wishListController.checkProductInWishList);
+router.get(
+  "/check/:productId",
+  asyncHandler(wishListController.checkProductInWishList)
+);
 
 export default router;

@@ -12,7 +12,7 @@ export const getAllUserOrders = async (req: AuthRequest) => {
 
   const orders = await orderRepo.getAllUserOrders(userId);
 
-  if (orders.length == 0) {
+  if (!orders) {
     throw new NotFoundError("orders not Found");
   }
 
